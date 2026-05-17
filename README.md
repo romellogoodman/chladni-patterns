@@ -11,25 +11,27 @@ Named after German physicist Ernst Chladni, these patterns emerge when sand or s
 ## Features
 
 - **10,000 particle simulation** with steering behaviors
-- **Interactive pattern generation** - click anywhere to generate new patterns
+- **Six pattern formulas** — each click picks one at random
+- **Smooth morphing** between patterns via fractional mode numbers
 - **Full-screen visualization** with centered 1:1 aspect ratio
-- **Responsive design** - adapts to any screen size
-- **Real-time animation** - particles naturally flow toward nodal lines
+- **Responsive design** — adapts to any screen size
 
 ## How It Works
 
-The visualization uses the cosine-based Chladni equation:
+Each click randomizes both the pattern formula and the mode numbers `(m, n)`. The six formulas, found in the `PATTERNS` array in `src/App.jsx`:
 
-```
-f(x,y) = cos(n·π·x/L)·cos(m·π·y/L) - cos(m·π·x/L)·cos(n·π·y/L)
-```
+| Formula | Expression |
+| --- | --- |
+| Chladni (difference) | `\|cos(nπx)·cos(mπy) − cos(mπx)·cos(nπy)\|` |
+| Cosine plate (free edge) | `\|cos(nπx)·cos(mπy)\|` |
+| Sine membrane (clamped edge) | `\|sin(nπx)·sin(mπy)\|` |
+| Superposition | average of two Chladni figures with offset modes |
+| Circular drumhead | `cos(mπr)·cos(nθ)` in polar coordinates |
+| Hexagonal | sum of three plane waves 60° apart |
 
-Where:
-- `m` and `n` determine the number of standing wave segments
-- `L` sets the physical size of the plate
-- Points where `f(x,y) ≈ 0` are nodal lines
+In every case, points where the expression is near zero are nodal lines. Particles drift when they are off-nodal (targets get a small random jitter, so inertia carries them around the canvas) and coast to a stop when they land near a nodal line. The asymmetry produces a soft cloud of motion everywhere with the figure emerging crisply inside it.
 
-Particles use steering behaviors to seek targets near nodal lines, creating organic movement as they settle into patterns.
+Mode numbers `(m, n)` are carried as floats and eased toward a new random target over about a second, so switching patterns is a morph rather than a snap.
 
 ## Getting Started
 
@@ -55,9 +57,9 @@ npm run build
 
 ## Usage
 
-- **Click anywhere** on the canvas to generate a new random Chladni pattern
-- Each pattern uses random `m` and `n` values (1-6) to create unique geometric formations
-- Particles will naturally flow and settle onto the nodal lines
+- **Click anywhere** on the canvas to pick a new pattern
+- Each click selects a random formula and random `m`, `n` values in `[1, 6)`
+- The previous figure morphs into the new one over ~1 second as `m` and `n` ease toward their targets
 
 ## Technologies
 

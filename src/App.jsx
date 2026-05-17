@@ -68,8 +68,8 @@ class Particle {
     this.position = p.createVector(p.random(w1, w2), p.random(h1, h2));
     this.velocity = p5.Vector.random2D();
     this.acceleration = p.createVector(0, 0);
-    this.maxSpeed = 4;
-    this.maxForce = 0.3;
+    this.maxSpeed = 7;
+    this.maxForce = 0.5;
     this.target = this.position.copy();
   }
 
@@ -127,7 +127,7 @@ function App() {
 
     const sketch = (p) => {
       const particles = [];
-      const numParticles = 10000;
+      const numParticles = 22000;
       const margin = 50;
       const threshold = 0.05;
       const minMN = 1;
@@ -187,8 +187,8 @@ function App() {
         }
 
         // ease toward target m,n so pattern shifts are a morph, not a snap
-        curM += (tgtM - curM) * 0.04;
-        curN += (tgtN - curN) * 0.04;
+        curM += (tgtM - curM) * 0.09;
+        curN += (tgtN - curN) * 0.09;
 
         const patternFn = PATTERNS[patternIdx];
 
