@@ -10,7 +10,7 @@ Named after German physicist Ernst Chladni, these patterns emerge when sand or s
 
 ## Features
 
-- **10,000 particle simulation** with steering behaviors
+- **22,000 particle simulation** with steering behaviors
 - **Six pattern formulas** — each click picks one at random
 - **Smooth morphing** between patterns via fractional mode numbers
 - **Full-screen visualization** with centered 1:1 aspect ratio
@@ -57,9 +57,12 @@ npm run build
 
 ## Usage
 
-- **Click anywhere** on the canvas to pick a new pattern
+- **Click or tap anywhere** on the canvas to pick a new pattern
 - Each click selects a random formula and random `m`, `n` values in `[1, 6)`
 - The previous figure morphs into the new one over ~1 second as `m` and `n` ease toward their targets
+- **Any key** picks a new pattern
+- **Space** pauses and resumes the simulation
+- **`s`** saves the current frame as a PNG
 
 ## Technologies
 
