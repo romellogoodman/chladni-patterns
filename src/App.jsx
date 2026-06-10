@@ -11,6 +11,9 @@ import "./App.scss";
 const PI = Math.PI;
 const SQRT3_2 = Math.sqrt(3) / 2;
 
+// How often (in frames) a settled particle re-checks the pattern field.
+const SETTLE_INTERVAL = 6;
+
 const PATTERNS = [
   // Chladni difference — the original formula
   (x, y, m, n) =>
@@ -67,10 +70,12 @@ class Particle {
     this.h2 = h2;
     this.position = p.createVector(p.random(w1, w2), p.random(h1, h2));
     this.velocity = p5.Vector.random2D();
-    this.acceleration = p.createVector(0, 0);
     this.maxSpeed = 7;
     this.maxForce = 0.5;
     this.target = this.position.copy();
+    this.settled = false;
+    // stagger the cheap re-check across frames so the work spreads out
+    this.phase = Math.floor(Math.random() * SETTLE_INTERVAL);
   }
 
   setBounds(w1, w2, h1, h2) {
@@ -83,30 +88,61 @@ class Particle {
   // Off-nodal particles get a lightly-jittered target so they keep drifting;
   // on-nodal particles target their own position and coast to a stop. The
   // asymmetry is what leaves a soft cloud everywhere with the figure crisp.
-  updateTarget(patternFn, m, n, threshold) {
-    const p = this.p;
-    const nx = p.map(this.position.x, this.w1, this.w2, 0, 1);
-    const ny = p.map(this.position.y, this.h1, this.h2, 0, 1);
+  updateTarget(patternFn, m, n, threshold, frame) {
+    // Settled (on-nodal) particles barely move, so re-evaluate the pattern
+    // for them only once every SETTLE_INTERVAL frames instead of every frame.
+    if (this.settled && (frame + this.phase) % SETTLE_INTERVAL !== 0) return;
+
+    // Inline the [w1,w2]->[0,1] map and avoid the p5 instance indirection.
+    const nx = (this.position.x - this.w1) / (this.w2 - this.w1);
+    const ny = (this.position.y - this.h1) / (this.h2 - this.h1);
     const val = patternFn(nx, ny, m, n);
 
-    this.target = this.position.copy();
+    // Reuse the persistent target vector instead of allocating a new copy.
+    this.target.x = this.position.x;
+    this.target.y = this.position.y;
     if (val > threshold) {
-      this.target.x += p.random(-3, 3);
-      this.target.y += p.random(-3, 3);
+      this.target.x += Math.random() * 6 - 3;
+      this.target.y += Math.random() * 6 - 3;
+      this.settled = false;
+    } else {
+      this.settled = true;
     }
   }
 
   update() {
-    const desired = p5.Vector.sub(this.target, this.position);
-    desired.setMag(this.maxSpeed);
-    const steering = p5.Vector.sub(desired, this.velocity);
-    steering.limit(this.maxForce);
-    this.acceleration.add(steering);
+    // desired = (target - position) scaled to maxSpeed
+    let dx = this.target.x - this.position.x;
+    let dy = this.target.y - this.position.y;
+    const dmag = Math.hypot(dx, dy);
+    if (dmag > 0) {
+      const s = this.maxSpeed / dmag;
+      dx *= s;
+      dy *= s;
+    }
 
-    this.velocity.add(this.acceleration);
-    this.velocity.limit(this.maxSpeed);
-    this.position.add(this.velocity);
-    this.acceleration.mult(0);
+    // steering = (desired - velocity) limited to maxForce
+    let sx = dx - this.velocity.x;
+    let sy = dy - this.velocity.y;
+    const smag = Math.hypot(sx, sy);
+    if (smag > this.maxForce) {
+      const s = this.maxForce / smag;
+      sx *= s;
+      sy *= s;
+    }
+
+    // velocity += steering, limited to maxSpeed
+    this.velocity.x += sx;
+    this.velocity.y += sy;
+    const vmag = Math.hypot(this.velocity.x, this.velocity.y);
+    if (vmag > this.maxSpeed) {
+      const s = this.maxSpeed / vmag;
+      this.velocity.x *= s;
+      this.velocity.y *= s;
+    }
+
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
 
     if (this.position.x > this.w2) this.position.x = this.w1;
     else if (this.position.x < this.w1) this.position.x = this.w2;
@@ -150,6 +186,7 @@ function App() {
         } while (Math.abs(tgtN - tgtM) < 0.4);
         for (const part of particles) {
           part.velocity = p5.Vector.random2D().mult(p.random(2, 5));
+          part.settled = false;
         }
       };
 
@@ -197,7 +234,7 @@ function App() {
         p.beginShape(p.POINTS);
         for (let i = 0; i < particles.length; i++) {
           const part = particles[i];
-          part.updateTarget(patternFn, curM, curN, threshold);
+          part.updateTarget(patternFn, curM, curN, threshold, p.frameCount);
           part.update();
           p.vertex(part.position.x, part.position.y);
         }
