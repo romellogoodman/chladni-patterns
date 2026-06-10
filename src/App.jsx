@@ -223,9 +223,12 @@ function App() {
           changePattern = false;
         }
 
-        // ease toward target m,n so pattern shifts are a morph, not a snap
-        curM += (tgtM - curM) * 0.09;
-        curN += (tgtN - curN) * 0.09;
+        // ease toward target m,n so pattern shifts are a morph, not a snap.
+        // Scale the easing by deltaTime so the morph runs at the same speed
+        // regardless of the display refresh rate (30/60/120 Hz).
+        const ease = 1 - Math.pow(1 - 0.09, p.deltaTime / (1000 / 60));
+        curM += (tgtM - curM) * ease;
+        curN += (tgtN - curN) * ease;
 
         const patternFn = PATTERNS[patternIdx];
 
