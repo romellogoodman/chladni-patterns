@@ -232,16 +232,29 @@ function App() {
 
         const patternFn = PATTERNS[patternIdx];
 
-        p.stroke(255);
-        p.strokeWeight(1);
-        p.beginShape(p.POINTS);
+        // Write particles straight into the pixel buffer. This is much faster
+        // than beginShape(POINTS) + 22k vertex() calls, which is one of P2D's
+        // slowest paths.
+        p.loadPixels();
+        const d = p.pixelDensity();
+        const pw = p.width * d;
+        const ph = p.height * d;
+        const px = p.pixels;
         for (let i = 0; i < particles.length; i++) {
           const part = particles[i];
           part.updateTarget(patternFn, curM, curN, threshold, p.frameCount);
           part.update();
-          p.vertex(part.position.x, part.position.y);
+          const sx = (part.position.x * d) | 0;
+          const sy = (part.position.y * d) | 0;
+          if (sx >= 0 && sx < pw && sy >= 0 && sy < ph) {
+            const idx = (sy * pw + sx) * 4;
+            px[idx] = 255;
+            px[idx + 1] = 255;
+            px[idx + 2] = 255;
+            px[idx + 3] = 255;
+          }
         }
-        p.endShape();
+        p.updatePixels();
       };
 
       p.mousePressed = () => {
