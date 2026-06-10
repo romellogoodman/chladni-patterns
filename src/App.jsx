@@ -177,6 +177,7 @@ function App() {
       let tgtM = 5, tgtN = 4;
 
       let changePattern = true;
+      let paused = false;
 
       const randomize = () => {
         patternIdx = Math.floor(p.random(PATTERNS.length));
@@ -257,15 +258,34 @@ function App() {
         p.updatePixels();
       };
 
+      const pointerInCanvas = () =>
+        p.mouseX >= 0 &&
+        p.mouseX <= p.width &&
+        p.mouseY >= 0 &&
+        p.mouseY <= p.height;
+
       p.mousePressed = () => {
-        if (
-          p.mouseX >= 0 &&
-          p.mouseX <= p.width &&
-          p.mouseY >= 0 &&
-          p.mouseY <= p.height
-        ) {
+        if (pointerInCanvas()) changePattern = true;
+      };
+
+      p.touchStarted = () => {
+        changePattern = true;
+        // returning false stops the browser scrolling/zooming on touch
+        return false;
+      };
+
+      p.keyPressed = () => {
+        if (p.key === " ") {
+          // space toggles the simulation (and stops the draw loop to save power)
+          paused = !paused;
+          if (paused) p.noLoop();
+          else p.loop();
+        } else if (p.key === "s" || p.key === "S") {
+          p.saveCanvas("chladni", "png");
+        } else {
           changePattern = true;
         }
+        return false;
       };
     };
 
